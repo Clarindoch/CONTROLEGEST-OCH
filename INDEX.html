@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d9488">
+<title>Meus Treinos</title>
+<style>
+  * { box-sizing: border-box; }
+  :root{
+    --bg: #f3f4f6;
+    --card: #ffffff;
+    --text: #1a1d23;
+    --text-dim: #6b7280;
+    --accent: #0d9488;
+    --accent-dark: #0f766e;
+    --accent-bg: #ccfbf1;
+    --danger: #dc2626;
+    --border: #e5e7eb;
+    --radius: 14px;
+  }
+  html, body{
+    margin:0; padding:0; background:var(--bg); color:var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body{ padding-bottom: 84px; }
+  input, textarea, button { font-family: inherit; font-size: 16px; }
+  header{
+    position: sticky; top:0; z-index: 20;
+    background: var(--accent);
+    color: #fff;
+    padding: 14px 16px 10px;
+  }
+  header h1{ margin:0 0 10px; font-size: 1.25rem; display:flex; align-items:center; gap:8px; }
+  .header-actions{ display:flex; gap:8px; }
+  .header-actions button{
+    flex: 1;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+    color:#fff; padding:8px 10px; border-radius: 10px; cursor:pointer;
+  }
+  .header-actions button:active{ background: rgba(255,255,255,0.32); }
+
+  #tabsDias{
+    position: sticky; top: 78px; z-index: 19;
+    display:flex; gap:8px; overflow-x:auto;
+    background: var(--bg);
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    -webkit-overflow-scrolling: touch;
+  }
+  #tabsDias::-webkit-scrollbar{ display:none; }
+  .tab{
+    flex: 0 0 auto;
+    background: var(--card); color: var(--text);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 8px 16px; cursor:pointer; white-space:nowrap;
+  }
+  .tab.active{ background: var(--accent); color:#fff; border-color: var(--accent); font-weight:600; }
+  .tab-add{ font-weight:700; color: var(--accent); border-color: var(--accent); }
+
+  main{ padding: 14px 12px 12px; max-width: 640px; margin: 0 auto; }
+
+  .dia-header{ display:flex; align-items:center; gap:10px; margin: 4px 0 14px; }
+  .dia-nome-input{
+    flex:1; border:none; background:transparent; font-size:1.15rem; font-weight:700;
+    padding:6px 4px; border-bottom: 2px solid transparent;
+  }
+  .dia-nome-input:focus{ outline:none; border-bottom-color: var(--accent); }
+
+  .btn-icon{
+    background:none; border:none; font-size:1.1rem; padding:6px; cursor:pointer; border-radius:8px; line-height:1;
+  }
+  .btn-icon:active{ background: var(--border); }
+
+  .vazio{ color: var(--text-dim); text-align:center; padding: 30px 10px; }
+
+  .btn-add-exercicio{
+    display:block; width:100%; margin-top: 6px;
+    background: var(--accent-bg); color: var(--accent-dark);
+    border: 1px dashed var(--accent); border-radius: var(--radius);
+    padding: 12px; font-weight:600; cursor:pointer;
+  }
+  .btn-add-exercicio:active{ background: #a7f3d0; }
+
+  .exercicio-card{
+    background: var(--card); border-radius: var(--radius);
+    padding: 12px; margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .exercicio-topo{ display:flex; gap:10px; }
+  .imagem-wrap{
+    flex: 0 0 72px; width:72px; height:72px; border-radius: 10px; overflow:hidden;
+    background: #f0f1f3; border: 1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    position: relative; cursor:pointer;
+  }
+  .imagem-wrap:focus{ outline: 2px solid var(--accent); }
+  .imagem-wrap img{ width:100%; height:100%; object-fit: cover; display:block; }
+  .imagem-placeholder{ font-size: 0.62rem; color: var(--text-dim); text-align:center; line-height:1.3; padding:2px; }
+  .btn-remover-imagem{
+    position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%;
+    background: rgba(0,0,0,0.6); color:#fff; border:none; font-size:0.7rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .exercicio-info{ flex:1; display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .exercicio-info{ flex-direction:row; align-items:flex-start; gap:6px; }
+  .exercicio-nome{
+    flex:1; border:none; border-bottom: 2px solid var(--border); background:transparent;
+    padding: 6px 2px; font-weight:600; font-size:1rem; min-width:0;
+  }
+  .exercicio-nome:focus{ outline:none; border-bottom-color: var(--accent); }
+
+  .exercicio-obs{
+    width:100%; margin-top:10px; border:1px solid var(--border); border-radius:10px;
+    padding:8px 10px; resize: vertical; min-height:38px; color: var(--text); background:#fafafa;
+  }
+  .exercicio-obs:focus{ outline:none; border-color: var(--accent); background:#fff; }
+
+  .ultimo-treino{
+    margin-top:10px; font-size:0.85rem; color: var(--text-dim);
+    background:#f8f8f9; border-radius:8px; padding:8px 10px;
+  }
+  .ultimo-treino strong{ color: var(--text); }
+
+  .hoje-label{ margin-top:10px; font-size:0.8rem; font-weight:700; color: var(--accent-dark); text-transform:uppercase; letter-spacing:.03em; }
+
+  .series-lista{ margin-top:6px; display:flex; flex-direction:column; gap:6px; }
+  .serie-row{ display:flex; align-items:center; gap:8px; }
+  .serie-num{
+    flex:0 0 22px; height:22px; border-radius:50%; background: var(--accent-bg); color: var(--accent-dark);
+    font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center;
+  }
+  .serie-peso, .serie-reps{
+    flex:1; min-width:0; border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center;
+  }
+  .serie-peso:focus, .serie-reps:focus{ outline:none; border-color:var(--accent); }
+  .serie-x{ color: var(--text-dim); flex:0 0 auto; }
+
+  .series-controles{ display:flex; align-items:center; justify-content:center; gap:10px; margin-top:10px; }
+  .btn-serie{
+    background:#f0f1f3; border:1px solid var(--border); border-radius:8px; padding:6px 12px; cursor:pointer;
+  }
+  .btn-serie:disabled{ opacity:0.4; }
+  .series-count{ font-size:0.82rem; color:var(--text-dim); }
+
+  #btnSalvarTreino{
+    position: fixed; left:0; right:0; bottom:0; z-index: 25;
+    background: var(--accent); color:#fff; border:none;
+    padding: 16px; font-size:1rem; font-weight:700; cursor:pointer;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.12);
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+  #btnSalvarTreino:active{ background: var(--accent-dark); }
+
+  #toast{
+    position: fixed; left:50%; bottom: 90px; transform: translate(-50%, 20px);
+    background: #1a1d23; color:#fff; padding:10px 16px; border-radius: 999px;
+    font-size:0.9rem; opacity:0; pointer-events:none; transition: all .25s ease;
+    z-index: 30; white-space: nowrap;
+  }
+  #toast.show{ opacity:1; transform: translate(-50%, 0); }
+
+  footer{ text-align:center; color: var(--text-dim); font-size:0.78rem; padding: 10px 20px 4px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>💪 Meus Treinos</h1>
+    <div class="header-actions">
+      <button id="btnExport">⬇️ Backup</button>
+      <button id="btnImport">⬆️ Restaurar</button>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
+  </header>
+
+  <nav id="tabsDias"></nav>
+
+  <main id="conteudoDia"></main>
+
+  <footer>Seus treinos ficam salvos neste navegador/aparelho. Use "Backup" de vez em quando para não perder nada.</footer>
+
+  <button id="btnSalvarTreino">✅ Salvar treino de hoje</button>
+
+<script>
+(function(){
+  "use strict";
+  const STORAGE_KEY = "meusTreinosApp_v1";
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+  function escapeHtml(str){
+    return String(str || "").replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;" }[c];
+    });
+  }
+
+  function loadData(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        if(parsed && Array.isArray(parsed.dias)) return parsed;
+      }
+    }catch(e){ console.error("Erro ao carregar dados salvos:", e); }
+    return { diaAtivoId: null, dias: [] };
+  }
+
+  let data = loadData();
+
+  function save(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }catch(e){
+      console.error("Erro ao salvar:", e);
+      toast("Não consegui salvar (armazenamento cheio?)");
+    }
+  }
+
+  // Garante que sempre existe pelo menos um dia de treino
+  if(data.dias.length === 0){
+    const id = uid();
+    data.dias.push({ id: id, nome: "Treino A", exercicios: [] });
+    data.diaAtivoId = id;
+  }
+  if(!data.dias.find(function(d){ return d.id === data.diaAtivoId; })){
+    data.diaAtivoId = data.dias[0].id;
+  }
+  save();
+
+  function getDiaAtivo(){
+    return data.dias.find(function(d){ return d.id === data.diaAtivoId; });
+  }
+
+  function toast(msg){
+    let t = document.getElementById("toast");
+    if(!t){
+      t = document.createElement("div");
+      t.id = "toast";
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function(){ t.classList.remove("show"); }, 2200);
+  }
+
+  function novoDia(){
+    const sugestao = "Treino " + String.fromCharCode(65 + data.dias.length);
+    const nome = prompt("Nome do novo treino (ex: Treino C, Pernas, Cardio...):", sugestao);
+    if(nome === null) return;
+    const novo = { id: uid(), nome: (nome.trim() || "Novo treino"), exercicios: [] };
+    data.dias.push(novo);
+    data.diaAtivoId = novo.id;
+    save();
+    renderAll();
+  }
+
+  function renderTabs(){
+    const nav = document.getElementById("tabsDias");
+    nav.innerHTML = "";
+    data.dias.forEach(function(dia){
+      const btn = document.createElement("button");
+      btn.className = "tab" + (dia.id === data.diaAtivoId ? " active" : "");
+      btn.textContent = dia.nome || "Treino";
+      btn.addEventListener("click", function(){
+        data.diaAtivoId = dia.id;
+        save();
+        renderAll();
+      });
+      nav.appendChild(btn);
+    });
+    const addBtn = document.createElement("button");
+    addBtn.className = "tab tab-add";
+    addBtn.textContent = "+ dia";
+    addBtn.title = "Novo treino";
+    addBtn.addEventListener("click", novoDia);
+    nav.appendChild(addBtn);
+  }
+
+  function processarImagem(file, ex){
+    if(!file || file.type.indexOf("image/") !== 0){ return; }
+    const leitor = new FileReader();
+    leitor.onload = function(e){
+      const img = new Image();
+      img.onload = function(){
+        const maxLado = 480;
+        let w = img.width, h = img.height;
+        if(w >= h && w > maxLado){ h = Math.round(h * (maxLado / w)); w = maxLado; }
+        else if(h > w && h > maxLado){ w = Math.round(w * (maxLado / h)); h = maxLado; }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        try{
+          ex.imagem = canvas.toDataURL("image/jpeg", 0.75);
+          save();
+          renderConteudoDia();
+        }catch(err){
+          console.error(err);
+          toast("Não consegui processar essa imagem.");
+        }
+      };
+      img.onerror = function(){ toast("Não consegui abrir essa imagem."); };
+      img.src = e.target.result;
+    };
+    leitor.readAsDataURL(file);
+  }
+
+  function addExercicio(){
+    const dia = getDiaAtivo();
+    if(!dia) return;
+    dia.exercicios.push({
+      id: uid(),
+      nome: "Novo exercício",
+      imagem: "",
+      observacoes: "",
+      seriesAtuais: [{peso:"",reps:""},{peso:"",reps:""},{peso:"",reps:""}],
+      ultimoTreino: null
+    });
+    save();
+    renderConteudoDia();
+  }
+
+  function criarCardExercicio(dia, ex){
+    const card = document.createElement("div");
+    card.className = "exercicio-card";
+
+    const ultimoTexto = ex.ultimoTreino
+      ? ex.ultimoTreino.data + ": " + ex.ultimoTreino.series.map(function(s){
+          return (s.peso || "?") + "kg×" + (s.reps || "?");
+        }).join(", ")
+      : "Nenhum registro ainda";
+
+    const seriesRows = ex.seriesAtuais.map(function(s, i){
+      return '<div class="serie-row">'
+        + '<span class="serie-num">' + (i+1) + '</span>'
+        + '<input type="number" inputmode="decimal" step="0.5" min="0" class="serie-peso" placeholder="kg" value="' + escapeHtml(s.peso || "") + '" data-idx="' + i + '">'
+        + '<span class="serie-x">×</span>'
+        + '<input type="number" inputmode="numeric" min="0" class="serie-reps" placeholder="reps" value="' + escapeHtml(s.reps || "") + '" data-idx="' + i + '">'
+        + '</div>';
+    }).join("");
+
+    card.innerHTML =
+      '<div class="exercicio-topo">'
+        + '<div class="imagem-wrap" tabindex="0" title="Toque para enviar, ou cole uma imagem copiada (Ctrl+V)">'
+          + (ex.imagem
+              ? '<img src="' + ex.imagem + '" alt="">'
+              : '<div class="imagem-placeholder">📷<br><span>Colar ou enviar imagem</span></div>')
+          + '<input type="file" accept="image/*" class="file-imagem" hidden>'
+          + (ex.imagem ? '<button class="btn-remover-imagem" title="Remover imagem">✕</button>' : '')
+        + '</div>'
+        + '<div class="exercicio-info">'
+          + '<input type="text" class="exercicio-nome" value="' + escapeHtml(ex.nome) + '" placeholder="Nome do exercício">'
+          + '<button class="btn-icon btn-excluir-exercicio" title="Excluir exercício">🗑️</button>'
+        + '</div>'
+      + '</div>'
+      + '<textarea class="exercicio-obs" placeholder="Observações do personal (execução, dicas, etc.)">' + escapeHtml(ex.observacoes || "") + '</textarea>'
+      + '<div class="ultimo-treino">Último treino: <strong>' + escapeHtml(ultimoTexto) + '</strong></div>'
+      + '<div class="hoje-label">Hoje</div>'
+      + '<div class="series-lista">' + seriesRows + '</div>'
+      + '<div class="series-controles">'
+        + '<button class="btn-serie btn-menos-serie"' + (ex.seriesAtuais.length <= 1 ? " disabled" : "") + '>− série</button>'
+        + '<span class="series-count">' + ex.seriesAtuais.length + ' séries</span>'
+        + '<button class="btn-serie btn-mais-serie">+ série</button>'
+      + '</div>';
+
+    // imagem: enviar arquivo
+    const imgWrap = card.querySelector(".imagem-wrap");
+    const fileInput = card.querySelector(".file-imagem");
+    imgWrap.addEventListener("click", function(e){
+      if(e.target.classList.contains("btn-remover-imagem")) return;
+      fileInput.click();
+    });
+    fileInput.addEventListener("change", function(){
+      if(fileInput.files[0]) processarImagem(fileInput.files[0], ex);
+    });
+    // imagem: colar (Ctrl+V)
+    imgWrap.addEventListener("paste", function(e){
+      const items = e.clipboardData && e.clipboardData.items;
+      if(!items) return;
+      for(let i=0; i<items.length; i++){
+        const item = items[i];
+        if(item.type.indexOf("image/") === 0){
+          const blob = item.getAsFile();
+          if(blob) processarImagem(blob, ex);
+          e.preventDefault();
+          break;
+        }
+      }
+    });
+    const btnRemoverImg = card.querySelector(".btn-remover-imagem");
+    if(btnRemoverImg){
+      btnRemoverImg.addEventListener("click", function(e){
+        e.stopPropagation();
+        ex.imagem = "";
+        save();
+        renderConteudoDia();
+      });
+    }
+
+    card.querySelector(".exercicio-nome").addEventListener("input", function(e){
+      ex.nome = e.target.value;
+      save();
+    });
+    card.querySelector(".exercicio-obs").addEventListener("input", function(e){
+      ex.observacoes = e.target.value;
+      save();
+    });
+    card.querySelector(".btn-excluir-exercicio").addEventListener("click", function(){
+      if(confirm('Excluir o exercício "' + ex.nome + '"?')){
+        dia.exercicios = dia.exercicios.filter(function(x){ return x.id !== ex.id; });
+        save();
+        renderConteudoDia();
+      }
+    });
+    card.querySelectorAll(".serie-peso").forEach(function(inp){
+      inp.addEventListener("input", function(e){
+        ex.seriesAtuais[+e.target.dataset.idx].peso = e.target.value;
+        save();
+      });
+    });
+    card.querySelectorAll(".serie-reps").forEach(function(inp){
+      inp.addEventListener("input", function(e){
+        ex.seriesAtuais[+e.target.dataset.idx].reps = e.target.value;
+        save();
+      });
+    });
+    card.querySelector(".btn-mais-serie").addEventListener("click", function(){
+      ex.seriesAtuais.push({peso:"",reps:""});
+      save();
+      renderConteudoDia();
+    });
+    card.querySelector(".btn-menos-serie").addEventListener("click", function(){
+      if(ex.seriesAtuais.length > 1){
+        ex.seriesAtuais.pop();
+        save();
+        renderConteudoDia();
+      }
+    });
+
+    return card;
+  }
+
+  function renderConteudoDia(){
+    const dia = getDiaAtivo();
+    const main = document.getElementById("conteudoDia");
+    if(!dia){ main.innerHTML = "<p class=\"vazio\">Nenhum treino ainda.</p>"; return; }
+
+    main.innerHTML =
+      '<div class="dia-header">'
+        + '<input type="text" id="diaNomeInput" class="dia-nome-input" value="' + escapeHtml(dia.nome) + '">'
+        + '<button id="btnExcluirDia" class="btn-icon" title="Excluir este treino">🗑️</button>'
+      + '</div>'
+      + '<div id="listaExercicios"></div>'
+      + '<button id="btnAddExercicio" class="btn-add-exercicio">+ Adicionar exercício</button>';
+
+    document.getElementById("diaNomeInput").addEventListener("input", function(e){
+      dia.nome = e.target.value;
+      save();
+      renderTabs();
+    });
+    document.getElementById("btnExcluirDia").addEventListener("click", function(){
+      if(data.dias.length <= 1){ toast("Mantenha ao menos um treino."); return; }
+      if(confirm('Excluir "' + dia.nome + '" e todos os exercícios dele?')){
+        data.dias = data.dias.filter(function(d){ return d.id !== dia.id; });
+        data.diaAtivoId = data.dias[0].id;
+        save();
+        renderAll();
+      }
+    });
+    document.getElementById("btnAddExercicio").addEventListener("click", addExercicio);
+
+    const lista = document.getElementById("listaExercicios");
+    if(dia.exercicios.length === 0){
+      lista.innerHTML = '<p class="vazio">Nenhum exercício ainda.<br>Toque em "+ Adicionar exercício".</p>';
+    } else {
+      dia.exercicios.forEach(function(ex){
+        lista.appendChild(criarCardExercicio(dia, ex));
+      });
+    }
+  }
+
+  function renderAll(){
+    renderTabs();
+    renderConteudoDia();
+  }
+
+  function salvarTreinoDoDia(){
+    const dia = getDiaAtivo();
+    if(!dia) return;
+    const hoje = new Date().toLocaleDateString("pt-BR");
+    let algumaCoisaPreenchida = false;
+    dia.exercicios.forEach(function(ex){
+      const preenchidas = ex.seriesAtuais.filter(function(s){ return s.peso || s.reps; });
+      if(preenchidas.length > 0){
+        algumaCoisaPreenchida = true;
+        ex.ultimoTreino = {
+          data: hoje,
+          series: ex.seriesAtuais.map(function(s){ return { peso: s.peso, reps: s.reps }; })
+        };
+        ex.seriesAtuais = ex.seriesAtuais.map(function(){ return { peso: "", reps: "" }; });
+      }
+    });
+    save();
+    renderConteudoDia();
+    toast(algumaCoisaPreenchida ? "Treino salvo! ✅" : "Preencha ao menos uma série antes de salvar.");
+  }
+
+  function exportarBackup(){
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "meus-treinos-backup-" + new Date().toISOString().slice(0,10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast("Backup baixado!");
+  }
+
+  function importarBackup(file){
+    const leitor = new FileReader();
+    leitor.onload = function(e){
+      try{
+        const novo = JSON.parse(e.target.result);
+        if(novo && Array.isArray(novo.dias) && novo.dias.length > 0){
+          if(confirm("Isso vai substituir todos os treinos atuais pelos do backup. Continuar?")){
+            data = novo;
+            if(!data.dias.find(function(d){ return d.id === data.diaAtivoId; })){
+              data.diaAtivoId = data.dias[0].id;
+            }
+            save();
+            renderAll();
+            toast("Backup importado!");
+          }
+        } else {
+          alert("Arquivo de backup inválido.");
+        }
+      }catch(err){
+        alert("Não consegui ler esse arquivo.");
+      }
+    };
+    leitor.readAsText(file);
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    renderAll();
+    document.getElementById("btnSalvarTreino").addEventListener("click", salvarTreinoDoDia);
+    document.getElementById("btnExport").addEventListener("click", exportarBackup);
+    document.getElementById("btnImport").addEventListener("click", function(){
+      document.getElementById("importFile").click();
+    });
+    document.getElementById("importFile").addEventListener("change", function(e){
+      if(e.target.files[0]) importarBackup(e.target.files[0]);
+      e.target.value = "";
+    });
+  });
+})();
+</script>
+</body>
+</html>
