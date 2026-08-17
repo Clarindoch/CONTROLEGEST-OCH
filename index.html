@@ -2,866 +2,565 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel Financeiro — Clarindo</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d9488">
+<title>Meus Treinos</title>
 <style>
+  * { box-sizing: border-box; }
   :root{
-    --blue:#1F4E78; --blue-l:#e8f0f7;
-    --teal:#00695C; --teal-l:#e1f2ef;
-    --green:#2E7D32; --red:#C0392B; --gray:#555;
-    --bg:#f4f6f8; --card:#ffffff; --border:#e2e5e9;
+    --bg: #f3f4f6;
+    --card: #ffffff;
+    --text: #1a1d23;
+    --text-dim: #6b7280;
+    --accent: #0d9488;
+    --accent-dark: #0f766e;
+    --accent-bg: #ccfbf1;
+    --danger: #dc2626;
+    --border: #e5e7eb;
+    --radius: 14px;
   }
-  *{box-sizing:border-box;}
-  body{font-family:Arial, Helvetica, sans-serif; margin:0; background:var(--bg); color:#222; -webkit-text-size-adjust:100%;}
-  #topBar{position:sticky; top:0; z-index:30; box-shadow:0 2px 10px rgba(0,0,0,.12);}
-  header{padding:14px 20px; color:#fff; transition:background .2s; display:flex; justify-content:space-between; align-items:center; gap:12px;}
-  header .titles{min-width:0;}
-  header h1{margin:0 0 2px; font-size:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  header p{margin:0; opacity:.9; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .gear-btn{position:relative; flex-shrink:0; background:rgba(255,255,255,.2); border:none; color:#fff; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;}
-  .gear-btn:active{background:rgba(255,255,255,.32);}
-  .gear-btn .pending-dot{position:absolute; top:-6px; right:-6px; background:#E67E22; color:#fff; border-radius:10px; font-size:10px; font-weight:bold; padding:1px 6px; display:none; box-shadow:0 0 0 2px rgba(0,0,0,.15);}
-  .sync-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
-  .sync-row button{background:#fff; border:1px solid #ccc; border-radius:6px; padding:7px 12px; font-size:12px; cursor:pointer;}
-  .tabs{display:flex; gap:6px; padding:8px 12px; background:#e4e9ee; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:thin;}
-  .tab-btn{flex:0 0 auto; padding:10px 16px; border:none; border-radius:8px; background:transparent; font-weight:bold; font-size:13px; cursor:pointer; color:#5a6472; white-space:nowrap; transition:background .15s, color .15s;}
-  .tab-btn.active{background:var(--card); box-shadow:0 1px 4px rgba(0,0,0,.1);}
-  .tab-btn.active.pessoal{color:var(--blue);}
-  .tab-btn.active.ch{color:var(--teal);}
-  .tab-btn.active.investimentos{color:#8E44AD;}
-  .tab-btn.active.reserva{color:#B7791F;}
-  main{max-width:1100px; margin:0 auto; padding:16px 16px 40px;}
-  @media (max-width:640px){
-    header{padding:12px 14px;}
-    header h1{font-size:16px;}
-    header p{display:none;}
-    .gear-btn{padding:8px 10px; font-size:12px;}
-    .tab-btn{padding:9px 13px; font-size:12.5px;}
-    main{padding:12px 12px 32px;}
+  html, body{
+    margin:0; padding:0; background:var(--bg); color:var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
   }
+  body{ padding-bottom: 84px; }
+  input, textarea, button { font-family: inherit; font-size: 16px; }
+  header{
+    position: sticky; top:0; z-index: 20;
+    background: var(--accent);
+    color: #fff;
+    padding: 14px 16px 10px;
+  }
+  header h1{ margin:0 0 10px; font-size: 1.25rem; display:flex; align-items:center; gap:8px; }
+  .header-actions{ display:flex; gap:8px; }
+  .header-actions button{
+    flex: 1;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+    color:#fff; padding:8px 10px; border-radius: 10px; cursor:pointer;
+  }
+  .header-actions button:active{ background: rgba(255,255,255,0.32); }
 
-  #settingsPanel{max-width:1100px; margin:16px auto 0; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:0; overflow:hidden; max-height:0; transition:max-height .2s ease;}
-  #settingsPanel.open{max-height:600px;}
-  #settingsPanel .inner{padding:16px;}
-  #settingsPanel h3{margin:0 0 8px; font-size:14px;}
-  #settingsPanel ol{font-size:12.5px; color:#555; line-height:1.6; margin:8px 0; padding-left:18px;}
-  .url-row{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
-  .url-row input{flex:1; min-width:220px; padding:9px; border:1px solid #ccc; border-radius:6px; font-size:13px;}
-  .url-row button{background:var(--blue); color:#fff; border:none; border-radius:6px; padding:9px 14px; font-weight:bold; cursor:pointer;}
-  #syncStatus{font-size:12.5px; margin-top:8px; font-weight:bold;}
+  #tabsDias{
+    position: sticky; top: 78px; z-index: 19;
+    display:flex; gap:8px; overflow-x:auto;
+    background: var(--bg);
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    -webkit-overflow-scrolling: touch;
+  }
+  #tabsDias::-webkit-scrollbar{ display:none; }
+  .tab{
+    flex: 0 0 auto;
+    background: var(--card); color: var(--text);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 8px 16px; cursor:pointer; white-space:nowrap;
+  }
+  .tab.active{ background: var(--accent); color:#fff; border-color: var(--accent); font-weight:600; }
+  .tab-add{ font-weight:700; color: var(--accent); border-color: var(--accent); }
 
-  .controls{display:flex; gap:10px; flex-wrap:wrap; align-items:center; background:var(--card); padding:14px; border-radius:12px; border:1px solid var(--border); margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.04);}
-  select{padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px;}
-  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px;}
-  .card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; box-shadow:0 1px 3px rgba(0,0,0,.04);}
-  .card .label{font-size:12px; color:#777; margin-bottom:4px;}
-  .card .value{font-size:20px; font-weight:bold;}
-  .card.entradas .value{color:var(--green);}
-  .card.saidas .value{color:var(--red);}
-  .card.saldo .value{color:var(--blue);}
-  .section{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px; overflow-x:auto; box-shadow:0 1px 3px rgba(0,0,0,.04);}
-  .section h2{font-size:15px; margin:0 0 12px; display:flex; align-items:center; gap:8px;}
-  .badge{display:inline-block; width:10px; height:10px; border-radius:50%;}
-  form.add-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; margin-bottom:12px; align-items:end;}
-  form.add-row input, form.add-row select{padding:8px; border:1px solid #ccc; border-radius:6px; font-size:13px; width:100%;}
-  form.add-row button{background:var(--blue); color:#fff; border:none; border-radius:6px; padding:9px 12px; font-weight:bold; cursor:pointer; height:36px;}
-  table{width:100%; border-collapse:collapse; font-size:13px; min-width:640px;}
-  th,td{text-align:left; padding:6px 8px; border-bottom:1px solid var(--border);}
-  th{color:#777; font-weight:normal; font-size:12px; white-space:nowrap;}
-  td.val{text-align:right; font-weight:bold; white-space:nowrap;}
-  td.obs{color:#666; font-size:12px; max-width:220px;}
-  .status-pill{display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:bold;}
-  .status-ok{background:#e3f2e6; color:var(--green);}
-  .status-pend{background:#fdece9; color:var(--red);}
-  .del{background:none; border:none; color:#c0392b; cursor:pointer; font-size:14px;}
-  .empty{color:#999; font-size:13px; padding:8px 0;}
-  .charts{display:grid; grid-template-columns:1.4fr 1fr; gap:16px;}
-  @media(max-width:700px){ .charts{grid-template-columns:1fr;} }
-  .toolbar{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
-  .toolbar button{background:#fff; border:1px solid #ccc; border-radius:6px; padding:8px 12px; font-size:12px; cursor:pointer;}
-  .note{font-size:12px; color:#888; margin-top:14px; line-height:1.5;}
-  canvas{max-height:260px;}
-  .hint{font-size:11.5px; color:#B7791F; margin-top:-4px; margin-bottom:8px;}
-  .meta-row{display:flex; align-items:center; gap:8px; margin-bottom:14px; font-size:13px;}
-  .meta-row input{padding:7px; border:1px solid #ccc; border-radius:6px; width:150px;}
-  .progress-bar{height:8px; background:#eee; border-radius:5px; overflow:hidden; margin-top:6px;}
-  .progress-bar > div{height:100%; background:#8E44AD;}
+  main{ padding: 14px 12px 12px; max-width: 640px; margin: 0 auto; }
+
+  .dia-header{ display:flex; align-items:center; gap:10px; margin: 4px 0 14px; }
+  .dia-nome-input{
+    flex:1; border:none; background:transparent; font-size:1.15rem; font-weight:700;
+    padding:6px 4px; border-bottom: 2px solid transparent;
+  }
+  .dia-nome-input:focus{ outline:none; border-bottom-color: var(--accent); }
+
+  .btn-icon{
+    background:none; border:none; font-size:1.1rem; padding:6px; cursor:pointer; border-radius:8px; line-height:1;
+  }
+  .btn-icon:active{ background: var(--border); }
+
+  .vazio{ color: var(--text-dim); text-align:center; padding: 30px 10px; }
+
+  .btn-add-exercicio{
+    display:block; width:100%; margin-top: 6px;
+    background: var(--accent-bg); color: var(--accent-dark);
+    border: 1px dashed var(--accent); border-radius: var(--radius);
+    padding: 12px; font-weight:600; cursor:pointer;
+  }
+  .btn-add-exercicio:active{ background: #a7f3d0; }
+
+  .exercicio-card{
+    background: var(--card); border-radius: var(--radius);
+    padding: 12px; margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .exercicio-topo{ display:flex; gap:10px; }
+  .imagem-wrap{
+    flex: 0 0 72px; width:72px; height:72px; border-radius: 10px; overflow:hidden;
+    background: #f0f1f3; border: 1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    position: relative; cursor:pointer;
+  }
+  .imagem-wrap:focus{ outline: 2px solid var(--accent); }
+  .imagem-wrap img{ width:100%; height:100%; object-fit: cover; display:block; }
+  .imagem-placeholder{ font-size: 0.62rem; color: var(--text-dim); text-align:center; line-height:1.3; padding:2px; }
+  .btn-remover-imagem{
+    position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%;
+    background: rgba(0,0,0,0.6); color:#fff; border:none; font-size:0.7rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .exercicio-info{ flex:1; display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .exercicio-info{ flex-direction:row; align-items:flex-start; gap:6px; }
+  .exercicio-nome{
+    flex:1; border:none; border-bottom: 2px solid var(--border); background:transparent;
+    padding: 6px 2px; font-weight:600; font-size:1rem; min-width:0;
+  }
+  .exercicio-nome:focus{ outline:none; border-bottom-color: var(--accent); }
+
+  .exercicio-obs{
+    width:100%; margin-top:10px; border:1px solid var(--border); border-radius:10px;
+    padding:8px 10px; resize: vertical; min-height:38px; color: var(--text); background:#fafafa;
+  }
+  .exercicio-obs:focus{ outline:none; border-color: var(--accent); background:#fff; }
+
+  .ultimo-treino{
+    margin-top:10px; font-size:0.85rem; color: var(--text-dim);
+    background:#f8f8f9; border-radius:8px; padding:8px 10px;
+  }
+  .ultimo-treino strong{ color: var(--text); }
+
+  .hoje-label{ margin-top:10px; font-size:0.8rem; font-weight:700; color: var(--accent-dark); text-transform:uppercase; letter-spacing:.03em; }
+
+  .series-lista{ margin-top:6px; display:flex; flex-direction:column; gap:6px; }
+  .serie-row{ display:flex; align-items:center; gap:8px; }
+  .serie-num{
+    flex:0 0 22px; height:22px; border-radius:50%; background: var(--accent-bg); color: var(--accent-dark);
+    font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center;
+  }
+  .serie-peso, .serie-reps{
+    flex:1; min-width:0; border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center;
+  }
+  .serie-peso:focus, .serie-reps:focus{ outline:none; border-color:var(--accent); }
+  .serie-x{ color: var(--text-dim); flex:0 0 auto; }
+
+  .series-controles{ display:flex; align-items:center; justify-content:center; gap:10px; margin-top:10px; }
+  .btn-serie{
+    background:#f0f1f3; border:1px solid var(--border); border-radius:8px; padding:6px 12px; cursor:pointer;
+  }
+  .btn-serie:disabled{ opacity:0.4; }
+  .series-count{ font-size:0.82rem; color:var(--text-dim); }
+
+  #btnSalvarTreino{
+    position: fixed; left:0; right:0; bottom:0; z-index: 25;
+    background: var(--accent); color:#fff; border:none;
+    padding: 16px; font-size:1rem; font-weight:700; cursor:pointer;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.12);
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+  #btnSalvarTreino:active{ background: var(--accent-dark); }
+
+  #toast{
+    position: fixed; left:50%; bottom: 90px; transform: translate(-50%, 20px);
+    background: #1a1d23; color:#fff; padding:10px 16px; border-radius: 999px;
+    font-size:0.9rem; opacity:0; pointer-events:none; transition: all .25s ease;
+    z-index: 30; white-space: nowrap;
+  }
+  #toast.show{ opacity:1; transform: translate(-50%, 0); }
+
+  footer{ text-align:center; color: var(--text-dim); font-size:0.78rem; padding: 10px 20px 4px; }
 </style>
 </head>
 <body>
-
-<div id="topBar">
-<header id="pageHeader">
-  <div class="titles">
-    <h1 id="pageTitle">Painel Financeiro — Filipe Clarindo</h1>
-    <p id="pageSubtitle">Pessoal e CH Cursos e Consultoria, mês a mês</p>
-  </div>
-  <button class="gear-btn" onclick="toggleSettings()">⚙️ Conectar<span class="pending-dot" id="pendingDot">0</span></button>
-</header>
-
-<div class="tabs">
-  <button class="tab-btn active pessoal" id="btnPessoal" onclick="setPerson('pessoal')">👤 Pessoal</button>
-  <button class="tab-btn ch" id="btnCH" onclick="setPerson('ch')">🏢 CH Cursos e Consultoria</button>
-  <button class="tab-btn investimentos" id="btnInvestimentos" onclick="setPerson('investimentos')">📈 Investimentos</button>
-  <button class="tab-btn reserva" id="btnReserva" onclick="setPerson('reserva')">🛟 Reserva de Emergência</button>
-</div>
-</div><!-- /topBar -->
-
-<div id="settingsPanel">
-  <div class="inner">
-    <h3>Sincronizar com a sua planilha do Google</h3>
-    <ol>
-      <li>Abra a planilha <strong>Controle_Financeiro_Clarindo</strong> no Google Sheets (faça upload dela no seu Google Drive, se ainda não fez, e converta pra Planilhas Google em Arquivo &gt; Salvar como Planilhas Google).</li>
-      <li>Vá em <strong>Extensões &gt; Apps Script</strong>, apague o conteúdo padrão e cole o arquivo <strong>Code.gs</strong> que eu te enviei.</li>
-      <li>Clique em <strong>Implantar &gt; Nova implantação &gt; tipo "App da Web"</strong>. Em "Executar como" deixe você mesmo; em "Quem pode acessar" escolha <strong>Qualquer pessoa</strong>.</li>
-      <li>Copie a URL gerada (termina em <code>/exec</code>) e cole abaixo.</li>
-    </ol>
-    <div class="url-row">
-      <input type="text" id="gsUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
-      <button onclick="saveGsUrl()">Salvar e conectar</button>
+  <header>
+    <h1>💪 Meus Treinos</h1>
+    <div class="header-actions">
+      <button id="btnExport">⬇️ Backup</button>
+      <button id="btnImport">⬆️ Restaurar</button>
+      <input type="file" id="importFile" accept="application/json" hidden>
     </div>
-    <div class="sync-row" style="margin-top:8px;">
-      <div id="syncStatus">● Modo local (sem sincronização automática)</div>
-      <button onclick="flushQueue(true)">🔄 Sincronizar agora</button>
-    </div>
-    <p style="font-size:12px; color:#888; margin-top:8px;">
-      Funciona offline: você pode lançar dados sem internet (no celular ou no computador) que eles ficam guardados
-      neste aparelho normalmente. Assim que a conexão voltar, tudo é enviado sozinho pra planilha — não precisa fazer nada.
-    </p>
-  </div>
-</div>
+  </header>
 
-<main>
-  <div class="controls">
-    <label>Ano <select id="yearSel"></select></label>
-    <label id="monthLabel">Mês <select id="monthSel"></select></label>
-    <div class="toolbar" style="margin-left:auto;">
-      <button onclick="exportJSON()">⬇️ Exportar backup (.json)</button>
-      <button onclick="document.getElementById('importFile').click()">⬆️ Importar backup</button>
-      <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importJSON(event)">
-      <button onclick="exportCSV()">📄 Exportar (.csv)</button>
-    </div>
-  </div>
+  <nav id="tabsDias"></nav>
 
-  <div id="flowSections">
-  <div class="cards">
-    <div class="card entradas"><div class="label">Total de Entradas</div><div class="value" id="cardEntradas">R$ 0,00</div></div>
-    <div class="card saidas"><div class="label">Total de Saídas</div><div class="value" id="cardSaidas">R$ 0,00</div></div>
-    <div class="card saldo"><div class="label">Saldo do Mês</div><div class="value" id="cardSaldo">R$ 0,00</div></div>
-  </div>
+  <main id="conteudoDia"></main>
 
-  <div class="section">
-    <h2><span class="badge" style="background:var(--green)"></span> Entradas</h2>
-    <form class="add-row" id="formEntrada">
-      <input type="date" name="data" required>
-      <input type="text" name="desc" placeholder="Descrição" required>
-      <select name="cat" id="catEntradaSel"></select>
-      <select name="forma" id="formaEntradaSel"></select>
-      <input type="number" step="0.01" name="valor" placeholder="Valor R$" required>
-      <select name="status" id="statusEntradaSel"></select>
-      <input type="text" name="obs" placeholder="Observação (opcional)">
-      <button type="submit">+ Adicionar</button>
-    </form>
-    <table id="tblEntradas"><thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Forma</th><th style="text-align:right">Valor</th><th>Status</th><th>Observação</th><th></th></tr></thead><tbody></tbody></table>
-  </div>
+  <footer>Seus treinos ficam salvos neste navegador/aparelho. Use "Backup" de vez em quando para não perder nada.</footer>
 
-  <div class="section">
-    <h2><span class="badge" style="background:var(--red)"></span> Saídas do dia a dia</h2>
-    <form class="add-row" id="formSaida">
-      <input type="date" name="data" required>
-      <input type="text" name="desc" placeholder="Descrição" required>
-      <select name="cat" id="catSaidaSel"></select>
-      <select name="forma" id="formaSaidaSel"></select>
-      <input type="number" step="0.01" name="valor" placeholder="Valor R$" required>
-      <select name="status" id="statusSaidaSel"></select>
-      <input type="text" name="obs" placeholder="Observação (opcional)">
-      <button type="submit">+ Adicionar</button>
-    </form>
-    <table id="tblSaidas"><thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Forma</th><th style="text-align:right">Valor</th><th>Status</th><th>Observação</th><th></th></tr></thead><tbody></tbody></table>
-  </div>
-
-  <div class="section">
-    <h2><span class="badge" style="background:var(--gray)"></span> Gastos fixos do mês</h2>
-    <form class="add-row" id="formFixo">
-      <input type="text" name="desc" placeholder="Descrição (ex: Aluguel, Internet)" required>
-      <select name="forma" id="formaFixoSel"></select>
-      <input type="number" step="0.01" name="valor" placeholder="Valor R$" required>
-      <select name="status" id="statusFixoSel"></select>
-      <input type="text" name="obs" placeholder="Observação (opcional)">
-      <button type="submit">+ Adicionar</button>
-    </form>
-    <table id="tblFixos"><thead><tr><th>Descrição</th><th>Forma</th><th style="text-align:right">Valor</th><th>Status</th><th>Observação</th><th></th></tr></thead><tbody></tbody></table>
-  </div>
-
-  <div class="charts">
-    <div class="section">
-      <h2>Entradas x Saídas — ano</h2>
-      <canvas id="chartAno"></canvas>
-    </div>
-    <div class="section">
-      <h2>Saídas por categoria — mês</h2>
-      <canvas id="chartCat"></canvas>
-    </div>
-  </div>
-  </div><!-- /flowSections -->
-
-  <div id="investSection" style="display:none;">
-    <div class="cards">
-      <div class="card entradas"><div class="label">Total de Aportes</div><div class="value" id="cardInvAportes">R$ 0,00</div></div>
-      <div class="card saidas"><div class="label">Total de Resgates</div><div class="value" id="cardInvResgates">R$ 0,00</div></div>
-      <div class="card saldo"><div class="label">Saldo Investido</div><div class="value" id="cardInvSaldo">R$ 0,00</div></div>
-    </div>
-    <div class="section">
-      <h2><span class="badge" style="background:#8E44AD"></span> Fundos Imobiliários e outros investimentos</h2>
-      <form class="add-row" id="formInvest">
-        <input type="date" name="data" required>
-        <input type="text" name="desc" placeholder="Ativo / Descrição (ex: HGLG11)" required>
-        <select name="cat" id="tipoInvestSel"></select>
-        <select name="status" id="movInvestSel"></select>
-        <input type="number" step="0.01" name="valor" placeholder="Valor R$" required>
-        <input type="text" name="obs" placeholder="Observação (opcional)">
-        <button type="submit">+ Adicionar</button>
-      </form>
-      <table id="tblInvest"><thead><tr><th>Data</th><th>Ativo</th><th>Tipo</th><th>Movimento</th><th style="text-align:right">Valor</th><th>Observação</th><th></th></tr></thead><tbody></tbody></table>
-    </div>
-    <div class="section">
-      <h2>Investido por tipo de ativo</h2>
-      <canvas id="chartInvestTipo"></canvas>
-    </div>
-  </div>
-
-  <div id="reservaSection" style="display:none;">
-    <div class="cards">
-      <div class="card saldo"><div class="label">Saldo Atual da Reserva</div><div class="value" id="cardResSaldo">R$ 0,00</div></div>
-      <div class="card saidas"><div class="label">Pendente a Devolver (10%)</div><div class="value" id="cardResPendente">R$ 0,00</div></div>
-      <div class="card entradas"><div class="label">% da Meta Atingido</div><div class="value" id="cardResMeta">—</div></div>
-    </div>
-    <div class="section">
-      <div class="meta-row">
-        <strong>Meta da reserva:</strong>
-        <input type="number" step="0.01" id="metaInput" placeholder="Ex: 5000">
-        <button onclick="saveMeta()">Salvar meta</button>
-      </div>
-      <div class="progress-bar"><div id="metaProgress" style="width:0%"></div></div>
-    </div>
-    <div class="section">
-      <h2><span class="badge" style="background:#B7791F"></span> Movimentações — Filipe & Hellyeneid</h2>
-      <p class="hint">Toda retirada soma 10% que precisa ser devolvido pra reserva. Ex: retirar R$100 → devolver R$110 no total.</p>
-      <form class="add-row" id="formReserva">
-        <input type="date" name="data" required>
-        <select name="forma" id="quemSel"></select>
-        <select name="status" id="tipoReservaSel"></select>
-        <input type="number" step="0.01" name="valor" id="valorReserva" placeholder="Valor R$" required>
-        <input type="text" name="obs" placeholder="Observação (opcional)">
-        <button type="submit">+ Adicionar</button>
-      </form>
-      <p class="hint" id="devolverHint" style="display:none;"></p>
-      <table id="tblReserva"><thead><tr><th>Data</th><th>Quem</th><th>Tipo</th><th style="text-align:right">Valor</th><th>Observação</th><th></th></tr></thead><tbody></tbody></table>
-    </div>
-  </div>
-
-  <p class="note" id="noteText">
-    Sem uma URL do Apps Script configurada, os dados ficam salvos só neste navegador/aparelho — use "Exportar backup" e
-    "Importar backup" para levar os dados de um aparelho para o outro. Clique em "⚙️ Conectar ao Google Sheets" acima
-    para sincronizar automaticamente entre PC e celular através da sua planilha.
-  </p>
-</main>
+  <button id="btnSalvarTreino">✅ Salvar treino de hoje</button>
 
 <script>
-const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-const CATS = {
-  pessoal: { entrada: ["Salário","Freelance/Extra","Reembolso","Presente/Outros"],
-             saida: ["Moradia","Alimentação","Transporte","Saúde","Lazer","Educação","Outros"] },
-  ch: { entrada: ["Cursos","Consultoria","Treinamentos","Outros"],
-        saida: ["Ferramentas/Software","Marketing","Impostos","Transporte","Material","Serviços","Outros"] }
-};
-const FORMAS = ["Cartão de Crédito","Cartão de Débito","Dinheiro","Pix","Boleto"];
-const STATUS_ENTRADA = ["Recebido","Pendente"];
-const STATUS_SAIDA = ["Pago","Pendente"];
-const TIPO_INVEST = ["Fundo Imobiliário (FII)","Renda Fixa","Ações","Tesouro Direto","Criptomoeda","Outro"];
-const MOV_INVEST = ["Aporte","Resgate"];
-const QUEM_RESERVA = ["Filipe","Hellyeneid","Casal"];
-const TIPO_RESERVA = ["Aporte","Retirada","Devolução"];
-const THEME = {
-  pessoal: { color: "#1F4E78", light:"#e8f0f7", label:"Pessoal", sub:"Suas finanças pessoais, mês a mês" },
-  ch: { color: "#00695C", light:"#e1f2ef", label:"CH Cursos e Consultoria", sub:"Finanças da empresa, mês a mês" },
-  investimentos: { color: "#8E44AD", light:"#f2e9f7", label:"Investimentos", sub:"Fundos imobiliários e outros investimentos" },
-  reserva: { color: "#B7791F", light:"#fbf1e0", label:"Reserva", sub:"Reserva de emergência — Filipe & Hellyeneid" }
-};
-const TIPO_KEY = { entrada: "entradas", saida: "saidas", fixo: "fixos" };
-const FLOW_PEOPLE = ["pessoal","ch"];
+(function(){
+  "use strict";
+  const STORAGE_KEY = "meusTreinosApp_v1";
 
-const DEFAULT_GS_URL = "https://script.google.com/macros/s/AKfycbzVGFyiNos_0D_RoNurtT4pnbFSlFosz4c67PO8ynsRkLVEbi6BU5FTbmioLzMqWeuRDQ/exec";
-const savedGsUrl = localStorage.getItem("cfc_gs_url");
-let state = { person: "pessoal", year: 2026, month: 0, gsUrl: savedGsUrl !== null ? savedGsUrl : DEFAULT_GS_URL };
-let DATA = loadData();
-let queue = loadQueue();
-let flushing = false;
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 
-function loadData(){
-  try{ return JSON.parse(localStorage.getItem("cfc_data_v1")) || {}; }catch(e){ return {}; }
-}
-function saveData(){ localStorage.setItem("cfc_data_v1", JSON.stringify(DATA)); }
-function loadQueue(){
-  try{ return JSON.parse(localStorage.getItem("cfc_queue_v1")) || []; }catch(e){ return []; }
-}
-function saveQueue(){
-  localStorage.setItem("cfc_queue_v1", JSON.stringify(queue));
-  updatePendingBadge();
-}
-function updatePendingBadge(){
-  const dot = document.getElementById("pendingDot");
-  if(queue.length > 0){ dot.style.display = "inline-block"; dot.textContent = queue.length; }
-  else { dot.style.display = "none"; }
-}
-function ensurePath(){
-  const {person, year, month} = state;
-  DATA[person] = DATA[person] || {};
-  DATA[person][year] = DATA[person][year] || {};
-  DATA[person][year][month] = DATA[person][year][month] || {entradas:[], saidas:[], fixos:[]};
-  return DATA[person][year][month];
-}
-function fmt(v){ return "R$ " + Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2}); }
-function ensureInvestYear(year){
-  DATA.investimentos = DATA.investimentos || {};
-  DATA.investimentos[year] = DATA.investimentos[year] || { aportes: [], resgates: [] };
-  return DATA.investimentos[year];
-}
-function ensureReservaYear(year){
-  DATA.reserva = DATA.reserva || {};
-  DATA.reserva[year] = DATA.reserva[year] || { aportes: [], retiradas: [], devolucoes: [] };
-  return DATA.reserva[year];
-}
-function getMeta(){ return Number(localStorage.getItem("cfc_reserva_meta")||0); }
-function saveMeta(){
-  const v = Number(document.getElementById("metaInput").value) || 0;
-  localStorage.setItem("cfc_reserva_meta", v);
-  render();
-}
-function statusPill(s){
-  if(!s) return "";
-  const ok = s === "Recebido" || s === "Pago";
-  return `<span class="status-pill ${ok?'status-ok':'status-pend'}">${s}</span>`;
-}
-
-// ---------------- Sincronização com Google Sheets (Apps Script) ----------------
-
-function toggleSettings(){
-  document.getElementById("settingsPanel").classList.toggle("open");
-}
-
-function setSyncStatus(s){
-  const el = document.getElementById("syncStatus");
-  if(queue.length > 0 && s !== "loading"){
-    el.textContent = `● ${queue.length} lançamento(s) offline aguardando conexão para sincronizar`;
-    el.style.color = "#E67E22";
-    return;
+  function escapeHtml(str){
+    return String(str || "").replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;" }[c];
+    });
   }
-  if(s==="ok"){ el.textContent = "● Sincronizado com Google Sheets"; el.style.color = "var(--green)"; }
-  else if(s==="loading"){ el.textContent = "● Sincronizando..."; el.style.color = "#999"; }
-  else if(s==="error"){ el.textContent = "● Não foi possível conectar agora. Os lançamentos continuam sendo salvos neste aparelho e serão enviados quando a conexão voltar."; el.style.color = "var(--red)"; }
-  else { el.textContent = "● Modo local (sem sincronização automática)"; el.style.color = "#999"; }
-}
 
-async function flushQueue(manual){
-  updatePendingBadge();
-  if(!state.gsUrl || !queue.length || flushing) return;
-  if(!navigator.onLine){ setSyncStatus("error"); return; }
-  flushing = true;
-  setSyncStatus("loading");
-  const remaining = [];
-  for(const op of queue){
+  function loadData(){
     try{
-      if(op.type === "add") await postItem(op.tipo, op.item);
-      else if(op.type === "delete") await postDelete(op.id);
-    }catch(err){
-      remaining.push(op);
-    }
-  }
-  queue = remaining;
-  saveQueue();
-  flushing = false;
-  if(queue.length === 0){ await syncYear(); }
-  else { setSyncStatus("error"); if(manual) alert("Ainda não consegui sincronizar tudo. Vou tentar de novo automaticamente assim que a conexão melhorar."); }
-}
-
-function saveGsUrl(){
-  const val = document.getElementById("gsUrlInput").value.trim();
-  state.gsUrl = val;
-  localStorage.setItem("cfc_gs_url", val);
-  updateNote();
-  if(val){ testConnection(); } else { setSyncStatus("local"); }
-}
-
-async function testConnection(){
-  setSyncStatus("loading");
-  try{
-    const res = await fetch(state.gsUrl + "?action=ping");
-    const json = await res.json();
-    if(json.ok){ setSyncStatus("ok"); await syncYear(); }
-    else setSyncStatus("error");
-  }catch(err){
-    console.error(err);
-    setSyncStatus("error");
-  }
-}
-
-function updateNote(){
-  const note = document.getElementById("noteText");
-  if(state.gsUrl){
-    note.textContent = "Conectado à sua planilha do Google Sheets — os lançamentos são gravados lá e aparecem em qualquer aparelho aberto com essa mesma URL.";
-  } else {
-    note.textContent = "Sem uma URL do Apps Script configurada, os dados ficam salvos só neste navegador/aparelho — use \"Exportar backup\" e \"Importar backup\" para levar os dados de um aparelho para o outro. Clique em \"⚙️ Conectar ao Google Sheets\" acima para sincronizar automaticamente entre PC e celular através da sua planilha.";
-  }
-}
-
-function toApiItem(item, tipo){
-  return {
-    id: item.id, pessoa: state.person, ano: state.year, mes: state.month, tipo: tipo,
-    data: item.data || "", desc: item.desc || "", cat: item.cat || "",
-    forma: item.forma || "", valor: item.valor, status: item.status || "", obs: item.obs || ""
-  };
-}
-function fromRow(row){
-  return {
-    tipo: row.tipo,
-    mes: Number(row.mes),
-    item: { id: row.id, data: row.data, desc: row.descricao, cat: row.categoria, forma: row.forma, valor: row.valor, status: row.status, obs: row.observacao }
-  };
-}
-
-async function syncYear(){
-  if(!state.gsUrl) return;
-  setSyncStatus("loading");
-  try{
-    const url = `${state.gsUrl}?action=list&pessoa=${encodeURIComponent(state.person)}&ano=${encodeURIComponent(state.year)}`;
-    const res = await fetch(url);
-    const json = await res.json();
-    if(!json.ok) throw new Error(json.error || "erro desconhecido");
-
-    if(FLOW_PEOPLE.includes(state.person)){
-      DATA[state.person] = DATA[state.person] || {};
-      const yearObj = {};
-      for(let m=0;m<12;m++) yearObj[m] = {entradas:[], saidas:[], fixos:[]};
-      (json.rows||[]).forEach(row=>{
-        const {tipo, mes, item} = fromRow(row);
-        const key = TIPO_KEY[tipo];
-        if(key && yearObj[mes]) yearObj[mes][key].push(item);
-      });
-      DATA[state.person][state.year] = yearObj;
-    } else if(state.person === "investimentos"){
-      const yearObj = { aportes: [], resgates: [] };
-      (json.rows||[]).forEach(row=>{
-        const item = { id: row.id, data: row.data, desc: row.descricao, cat: row.categoria, valor: row.valor, obs: row.observacao };
-        if(row.tipo === "aporte") yearObj.aportes.push(item);
-        else if(row.tipo === "resgate") yearObj.resgates.push(item);
-      });
-      DATA.investimentos = DATA.investimentos || {};
-      DATA.investimentos[state.year] = yearObj;
-    } else if(state.person === "reserva"){
-      const yearObj = { aportes: [], retiradas: [], devolucoes: [] };
-      (json.rows||[]).forEach(row=>{
-        const item = { id: row.id, data: row.data, quem: row.forma, valor: row.valor, obs: row.observacao };
-        if(row.tipo === "aporte") yearObj.aportes.push(item);
-        else if(row.tipo === "retirada") yearObj.retiradas.push(item);
-        else if(row.tipo === "devolucao") yearObj.devolucoes.push(item);
-      });
-      DATA.reserva = DATA.reserva || {};
-      DATA.reserva[state.year] = yearObj;
-    }
-    saveData();
-    setSyncStatus("ok");
-  }catch(err){
-    console.error(err);
-    setSyncStatus("error");
-  }
-  render();
-}
-
-async function postItem(tipo, item){
-  const payload = { action: "add", item: toApiItem(item, tipo) };
-  const res = await fetch(state.gsUrl, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" }, // evita pre-flight CORS no Apps Script
-    body: JSON.stringify(payload)
-  });
-  const json = await res.json();
-  if(!json.ok) throw new Error(json.error || "falha ao gravar");
-}
-
-async function postDelete(id){
-  const payload = { action: "delete", id };
-  const res = await fetch(state.gsUrl, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify(payload)
-  });
-  const json = await res.json();
-  if(!json.ok) throw new Error(json.error || "falha ao excluir");
-}
-
-// ---------------- UI ----------------
-
-async function setPerson(p){
-  state.person = p;
-  document.getElementById("btnPessoal").classList.toggle("active", p==="pessoal");
-  document.getElementById("btnCH").classList.toggle("active", p==="ch");
-  document.getElementById("btnInvestimentos").classList.toggle("active", p==="investimentos");
-  document.getElementById("btnReserva").classList.toggle("active", p==="reserva");
-  const t = THEME[p];
-  document.getElementById("pageHeader").style.background = t.color;
-  document.getElementById("pageSubtitle").textContent = t.sub;
-
-  document.getElementById("flowSections").style.display = FLOW_PEOPLE.includes(p) ? "" : "none";
-  document.getElementById("investSection").style.display = p==="investimentos" ? "" : "none";
-  document.getElementById("reservaSection").style.display = p==="reserva" ? "" : "none";
-  document.getElementById("monthLabel").style.display = FLOW_PEOPLE.includes(p) ? "" : "none";
-
-  if(p==="reserva"){ document.getElementById("metaInput").value = getMeta() || ""; }
-
-  populateSelects();
-  if(state.gsUrl){ await syncYear(); } else { render(); }
-}
-
-function populateSelects(){
-  document.getElementById("catEntradaSel").innerHTML = CATS[state.person]?.entrada?.map(c=>`<option>${c}</option>`).join("") || "";
-  document.getElementById("catSaidaSel").innerHTML = CATS[state.person]?.saida?.map(c=>`<option>${c}</option>`).join("") || "";
-  [document.getElementById("formaEntradaSel"), document.getElementById("formaSaidaSel"), document.getElementById("formaFixoSel")].forEach(sel=>{
-    sel.innerHTML = FORMAS.map(f=>`<option>${f}</option>`).join("");
-  });
-  document.getElementById("statusEntradaSel").innerHTML = STATUS_ENTRADA.map(s=>`<option>${s}</option>`).join("");
-  [document.getElementById("statusSaidaSel"), document.getElementById("statusFixoSel")].forEach(sel=>{
-    sel.innerHTML = STATUS_SAIDA.map(s=>`<option>${s}</option>`).join("");
-  });
-  document.getElementById("tipoInvestSel").innerHTML = TIPO_INVEST.map(s=>`<option>${s}</option>`).join("");
-  document.getElementById("movInvestSel").innerHTML = MOV_INVEST.map(s=>`<option>${s}</option>`).join("");
-  document.getElementById("quemSel").innerHTML = QUEM_RESERVA.map(s=>`<option>${s}</option>`).join("");
-  document.getElementById("tipoReservaSel").innerHTML = TIPO_RESERVA.map(s=>`<option>${s}</option>`).join("");
-}
-
-function initSelectors(){
-  const yearSel = document.getElementById("yearSel");
-  const monthSel = document.getElementById("monthSel");
-  const years = [2025,2026,2027,2028];
-  yearSel.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join("");
-  yearSel.value = state.year;
-  monthSel.innerHTML = MESES.map((m,i)=>`<option value="${i}">${m}</option>`).join("");
-  const now = new Date();
-  state.month = now.getMonth();
-  monthSel.value = state.month;
-  yearSel.onchange = async ()=>{ state.year = Number(yearSel.value); if(state.gsUrl){ await syncYear(); } else { render(); } };
-  monthSel.onchange = ()=>{ state.month = Number(monthSel.value); render(); };
-}
-
-function addEntry(form, listKey, tipo){
-  form.addEventListener("submit", async e=>{
-    e.preventDefault();
-    const fd = new FormData(form);
-    const item = Object.fromEntries(fd.entries());
-    item.id = Date.now();
-    ensurePath()[listKey].push(item);
-    saveData();
-    form.reset();
-    populateSelects();
-    render();
-    if(state.gsUrl){
-      if(navigator.onLine){
-        try{ await postItem(tipo, item); setSyncStatus("ok"); }
-        catch(err){ console.error(err); queue.push({type:"add", tipo, item}); saveQueue(); setSyncStatus("error"); }
-      } else {
-        queue.push({type:"add", tipo, item}); saveQueue(); setSyncStatus("error");
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        if(parsed && Array.isArray(parsed.dias)) return parsed;
       }
-    }
-  });
-}
-addEntry(document.getElementById("formEntrada"), "entradas", "entrada");
-addEntry(document.getElementById("formSaida"), "saidas", "saida");
-addEntry(document.getElementById("formFixo"), "fixos", "fixo");
-
-async function syncOrQueue(tipo, item){
-  if(!state.gsUrl) return;
-  if(navigator.onLine){
-    try{ await postItem(tipo, item); setSyncStatus("ok"); }
-    catch(err){ console.error(err); queue.push({type:"add", tipo, item}); saveQueue(); setSyncStatus("error"); }
-  } else {
-    queue.push({type:"add", tipo, item}); saveQueue(); setSyncStatus("error");
+    }catch(e){ console.error("Erro ao carregar dados salvos:", e); }
+    return { diaAtivoId: null, dias: [] };
   }
-}
 
-document.getElementById("formInvest").addEventListener("submit", async e=>{
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const raw = Object.fromEntries(fd.entries()); // data, desc, cat, status(movimento), valor, obs
-  const item = { id: Date.now(), data: raw.data, desc: raw.desc, cat: raw.cat, valor: raw.valor, obs: raw.obs };
-  const tipo = raw.status === "Aporte" ? "aporte" : "resgate";
-  const d = ensureInvestYear(state.year);
-  d[tipo === "aporte" ? "aportes" : "resgates"].push(item);
-  saveData();
-  e.target.reset();
-  populateSelects();
-  render();
-  await syncOrQueue(tipo, item);
-});
+  let data = loadData();
 
-document.getElementById("formReserva").addEventListener("submit", async e=>{
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const raw = Object.fromEntries(fd.entries()); // data, forma(quem), status(tipo), valor, obs
-  const item = { id: Date.now(), data: raw.data, quem: raw.forma, valor: raw.valor, obs: raw.obs };
-  const tipoMap = { "Aporte": "aporte", "Retirada": "retirada", "Devolução": "devolucao" };
-  const tipo = tipoMap[raw.status] || "aporte";
-  const listKey = tipo === "aporte" ? "aportes" : tipo === "retirada" ? "retiradas" : "devolucoes";
-  const d = ensureReservaYear(state.year);
-  d[listKey].push(item);
-  saveData();
-  e.target.reset();
-  document.getElementById("devolverHint").style.display = "none";
-  populateSelects();
-  render();
-  // toApiItem espera desc/cat/forma; aqui mandamos quem no campo "forma"
-  await syncOrQueue(tipo, { id: item.id, data: item.data, desc: "", cat: "", forma: item.quem, valor: item.valor, status: "", obs: item.obs });
-});
-
-document.getElementById("tipoReservaSel").addEventListener("change", updateDevolverHint);
-document.getElementById("valorReserva").addEventListener("input", updateDevolverHint);
-function updateDevolverHint(){
-  const tipo = document.getElementById("tipoReservaSel").value;
-  const valor = Number(document.getElementById("valorReserva").value) || 0;
-  const hint = document.getElementById("devolverHint");
-  if(tipo === "Retirada" && valor > 0){
-    hint.style.display = "block";
-    hint.textContent = `⚠️ Retirando ${fmt(valor)} — depois vai precisar devolver ${fmt(valor*1.1)} no total (valor + 10%).`;
-  } else {
-    hint.style.display = "none";
-  }
-}
-
-async function removeItem(listKey, id){
-  const d = ensurePath();
-  d[listKey] = d[listKey].filter(i=>i.id!==id);
-  saveData();
-  render();
-  if(state.gsUrl){
-    if(navigator.onLine){
-      try{ await postDelete(id); setSyncStatus("ok"); }
-      catch(err){ console.error(err); queue.push({type:"delete", id}); saveQueue(); setSyncStatus("error"); }
-    } else {
-      queue.push({type:"delete", id}); saveQueue(); setSyncStatus("error");
-    }
-  }
-}
-
-let chartAno, chartCat, chartInvestTipo;
-
-function render(){
-  if(state.person === "investimentos"){ renderInvest(); return; }
-  if(state.person === "reserva"){ renderReserva(); return; }
-  renderFlow();
-}
-
-function renderInvest(){
-  const d = ensureInvestYear(state.year);
-  const totalAportes = d.aportes.reduce((s,i)=>s+Number(i.valor||0),0);
-  const totalResgates = d.resgates.reduce((s,i)=>s+Number(i.valor||0),0);
-  document.getElementById("cardInvAportes").textContent = fmt(totalAportes);
-  document.getElementById("cardInvResgates").textContent = fmt(totalResgates);
-  document.getElementById("cardInvSaldo").textContent = fmt(totalAportes - totalResgates);
-
-  const all = [
-    ...d.aportes.map(i=>({...i, mov:"Aporte"})),
-    ...d.resgates.map(i=>({...i, mov:"Resgate"}))
-  ].sort((a,b)=>(a.data||"").localeCompare(b.data||""));
-
-  const tb = document.querySelector("#tblInvest tbody");
-  tb.innerHTML = all.length ? all.map(i=>`<tr><td>${i.data||''}</td><td>${i.desc||''}</td><td>${i.cat||''}</td><td>${i.mov}</td><td class="val">${fmt(i.valor)}</td><td class="obs">${i.obs||''}</td><td><button class="del" onclick="removeInvestItem('${i.mov==='Aporte'?'aportes':'resgates'}',${i.id})">✕</button></td></tr>`).join("") : `<tr><td colspan="7" class="empty">Sem lançamentos ainda.</td></tr>`;
-
-  const byTipo = {};
-  d.aportes.forEach(i=>{ byTipo[i.cat] = (byTipo[i.cat]||0) + Number(i.valor||0); });
-  d.resgates.forEach(i=>{ byTipo[i.cat] = (byTipo[i.cat]||0) - Number(i.valor||0); });
-  const labels = Object.keys(byTipo).filter(k=>byTipo[k] > 0);
-  const ctx = document.getElementById("chartInvestTipo");
-  if(chartInvestTipo) chartInvestTipo.destroy();
-  chartInvestTipo = new Chart(ctx, {
-    type: "doughnut",
-    data: { labels: labels.length?labels:["Sem dados"], datasets:[{ data: labels.length?labels.map(k=>byTipo[k]):[1],
-      backgroundColor:["#8E44AD","#1F4E78","#00695C","#C0392B","#E67E22","#2E7D32"] }] },
-    options: { responsive:true, plugins:{legend:{position:"bottom"}} }
-  });
-}
-
-async function removeInvestItem(listKey, id){
-  const d = ensureInvestYear(state.year);
-  d[listKey] = d[listKey].filter(i=>i.id!==id);
-  saveData();
-  render();
-  if(state.gsUrl){
-    if(navigator.onLine){
-      try{ await postDelete(id); setSyncStatus("ok"); }
-      catch(err){ queue.push({type:"delete", id}); saveQueue(); setSyncStatus("error"); }
-    } else { queue.push({type:"delete", id}); saveQueue(); setSyncStatus("error"); }
-  }
-}
-
-function renderReserva(){
-  const d = ensureReservaYear(state.year);
-  const totalAportes = d.aportes.reduce((s,i)=>s+Number(i.valor||0),0);
-  const totalRetiradas = d.retiradas.reduce((s,i)=>s+Number(i.valor||0),0);
-  const totalDevolvido = d.devolucoes.reduce((s,i)=>s+Number(i.valor||0),0);
-  const saldo = totalAportes + totalDevolvido - totalRetiradas;
-  const devido = totalRetiradas * 1.1;
-  const pendente = Math.max(devido - totalDevolvido, 0);
-  const meta = getMeta();
-  const pct = meta > 0 ? (saldo / meta) * 100 : 0;
-
-  document.getElementById("cardResSaldo").textContent = fmt(saldo);
-  document.getElementById("cardResPendente").textContent = fmt(pendente);
-  document.getElementById("cardResMeta").textContent = meta > 0 ? pct.toFixed(1) + "%" : "sem meta definida";
-  document.getElementById("metaProgress").style.width = Math.min(pct,100) + "%";
-
-  const all = [
-    ...d.aportes.map(i=>({...i, tipo:"Aporte"})),
-    ...d.retiradas.map(i=>({...i, tipo:"Retirada"})),
-    ...d.devolucoes.map(i=>({...i, tipo:"Devolução"}))
-  ].sort((a,b)=>(a.data||"").localeCompare(b.data||""));
-
-  const tb = document.querySelector("#tblReserva tbody");
-  const listKeyOf = t => t==="Aporte"?"aportes":t==="Retirada"?"retiradas":"devolucoes";
-  const pillClass = t => t==="Retirada" ? "status-pend" : "status-ok";
-  tb.innerHTML = all.length ? all.map(i=>`<tr><td>${i.data||''}</td><td>${i.quem||''}</td><td><span class="status-pill ${pillClass(i.tipo)}">${i.tipo}</span></td><td class="val">${fmt(i.valor)}</td><td class="obs">${i.obs||''}</td><td><button class="del" onclick="removeReservaItem('${listKeyOf(i.tipo)}',${i.id})">✕</button></td></tr>`).join("") : `<tr><td colspan="6" class="empty">Sem lançamentos ainda.</td></tr>`;
-}
-
-async function removeReservaItem(listKey, id){
-  const d = ensureReservaYear(state.year);
-  d[listKey] = d[listKey].filter(i=>i.id!==id);
-  saveData();
-  render();
-  if(state.gsUrl){
-    if(navigator.onLine){
-      try{ await postDelete(id); setSyncStatus("ok"); }
-      catch(err){ queue.push({type:"delete", id}); saveQueue(); setSyncStatus("error"); }
-    } else { queue.push({type:"delete", id}); saveQueue(); setSyncStatus("error"); }
-  }
-}
-
-function renderFlow(){
-  const d = ensurePath();
-  const totalEntradas = d.entradas.reduce((s,i)=>s+Number(i.valor||0),0);
-  const totalSaidasVar = d.saidas.reduce((s,i)=>s+Number(i.valor||0),0);
-  const totalFixos = d.fixos.reduce((s,i)=>s+Number(i.valor||0),0);
-  const totalSaidas = totalSaidasVar + totalFixos;
-  document.getElementById("cardEntradas").textContent = fmt(totalEntradas);
-  document.getElementById("cardSaidas").textContent = fmt(totalSaidas);
-  const saldo = totalEntradas - totalSaidas;
-  const cardSaldo = document.getElementById("cardSaldo");
-  cardSaldo.textContent = fmt(saldo);
-  cardSaldo.style.color = saldo>=0 ? "var(--green)" : "var(--red)";
-
-  const tbE = document.querySelector("#tblEntradas tbody");
-  tbE.innerHTML = d.entradas.length ? d.entradas.map(i=>`<tr><td>${i.data||''}</td><td>${i.desc||''}</td><td>${i.cat||''}</td><td>${i.forma||''}</td><td class="val">${fmt(i.valor)}</td><td>${statusPill(i.status)}</td><td class="obs">${i.obs||''}</td><td><button class="del" onclick="removeItem('entradas',${i.id})">✕</button></td></tr>`).join("") : `<tr><td colspan="8" class="empty">Sem lançamentos ainda.</td></tr>`;
-
-  const tbS = document.querySelector("#tblSaidas tbody");
-  tbS.innerHTML = d.saidas.length ? d.saidas.map(i=>`<tr><td>${i.data||''}</td><td>${i.desc||''}</td><td>${i.cat||''}</td><td>${i.forma||''}</td><td class="val">${fmt(i.valor)}</td><td>${statusPill(i.status)}</td><td class="obs">${i.obs||''}</td><td><button class="del" onclick="removeItem('saidas',${i.id})">✕</button></td></tr>`).join("") : `<tr><td colspan="8" class="empty">Sem lançamentos ainda.</td></tr>`;
-
-  const tbF = document.querySelector("#tblFixos tbody");
-  tbF.innerHTML = d.fixos.length ? d.fixos.map(i=>`<tr><td>${i.desc||''}</td><td>${i.forma||''}</td><td class="val">${fmt(i.valor)}</td><td>${statusPill(i.status)}</td><td class="obs">${i.obs||''}</td><td><button class="del" onclick="removeItem('fixos',${i.id})">✕</button></td></tr>`).join("") : `<tr><td colspan="6" class="empty">Sem lançamentos ainda.</td></tr>`;
-
-  renderCharts(d, totalSaidasVar, totalFixos);
-}
-
-function renderCharts(d, totalSaidasVar, totalFixos){
-  const ctxAno = document.getElementById("chartAno");
-  const yearData = DATA[state.person]?.[state.year] || {};
-  const entradasArr = MESES.map((_,i)=> (yearData[i]?.entradas||[]).reduce((s,x)=>s+Number(x.valor||0),0));
-  const saidasArr = MESES.map((_,i)=> (yearData[i]?.saidas||[]).reduce((s,x)=>s+Number(x.valor||0),0) + (yearData[i]?.fixos||[]).reduce((s,x)=>s+Number(x.valor||0),0));
-  if(chartAno) chartAno.destroy();
-  chartAno = new Chart(ctxAno, {
-    type:"bar",
-    data:{ labels: MESES.map(m=>m.slice(0,3)), datasets:[
-      {label:"Entradas", data: entradasArr, backgroundColor:"#2E7D32"},
-      {label:"Saídas", data: saidasArr, backgroundColor:"#C0392B"}
-    ]},
-    options:{ responsive:true, plugins:{legend:{position:"bottom"}} }
-  });
-
-  const ctxCat = document.getElementById("chartCat");
-  const catTotals = {};
-  d.saidas.forEach(i=>{ catTotals[i.cat] = (catTotals[i.cat]||0) + Number(i.valor||0); });
-  if(totalFixos>0) catTotals["Gastos Fixos"] = (catTotals["Gastos Fixos"]||0) + totalFixos;
-  const labels = Object.keys(catTotals);
-  if(chartCat) chartCat.destroy();
-  chartCat = new Chart(ctxCat, {
-    type:"doughnut",
-    data:{ labels: labels.length?labels:["Sem dados"], datasets:[{ data: labels.length?Object.values(catTotals):[1],
-      backgroundColor:["#1F4E78","#00695C","#C0392B","#E67E22","#8E44AD","#2E7D32","#7f8c8d","#D4AC0D"] }]},
-    options:{ responsive:true, plugins:{legend:{position:"bottom"}} }
-  });
-}
-
-function exportJSON(){
-  const blob = new Blob([JSON.stringify(DATA,null,2)], {type:"application/json"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "painel_financeiro_backup.json";
-  a.click();
-}
-function importJSON(e){
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ev=>{
+  function save(){
     try{
-      const incoming = JSON.parse(ev.target.result);
-      DATA = incoming;
-      saveData();
-      render();
-      alert("Backup importado com sucesso.");
-    }catch(err){ alert("Arquivo inválido."); }
-  };
-  reader.readAsText(file);
-}
-function exportCSV(){
-  let rows, filename;
-  if(state.person === "investimentos"){
-    const d = ensureInvestYear(state.year);
-    rows = [["Movimento","Data","Ativo","Tipo","Valor","Observação"]];
-    d.aportes.forEach(i=>rows.push(["Aporte", i.data||'', i.desc||'', i.cat||'', i.valor, i.obs||'']));
-    d.resgates.forEach(i=>rows.push(["Resgate", i.data||'', i.desc||'', i.cat||'', i.valor, i.obs||'']));
-    filename = `investimentos_${state.year}.csv`;
-  } else if(state.person === "reserva"){
-    const d = ensureReservaYear(state.year);
-    rows = [["Tipo","Data","Quem","Valor","Observação"]];
-    d.aportes.forEach(i=>rows.push(["Aporte", i.data||'', i.quem||'', i.valor, i.obs||'']));
-    d.retiradas.forEach(i=>rows.push(["Retirada", i.data||'', i.quem||'', i.valor, i.obs||'']));
-    d.devolucoes.forEach(i=>rows.push(["Devolução", i.data||'', i.quem||'', i.valor, i.obs||'']));
-    filename = `reserva_emergencia_${state.year}.csv`;
-  } else {
-    const d = ensurePath();
-    rows = [["Tipo","Data","Descrição","Categoria","Forma","Valor","Status","Observação"]];
-    d.entradas.forEach(i=>rows.push(["Entrada", i.data||'', i.desc||'', i.cat||'', i.forma||'', i.valor, i.status||'', i.obs||'']));
-    d.saidas.forEach(i=>rows.push(["Saída", i.data||'', i.desc||'', i.cat||'', i.forma||'', i.valor, i.status||'', i.obs||'']));
-    d.fixos.forEach(i=>rows.push(["Gasto Fixo", "", i.desc||'', "", i.forma||'', i.valor, i.status||'', i.obs||'']));
-    filename = `financeiro_${state.person}_${MESES[state.month]}_${state.year}.csv`;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }catch(e){
+      console.error("Erro ao salvar:", e);
+      toast("Não consegui salvar (armazenamento cheio?)");
+    }
   }
-  const csv = rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(";")).join("\n");
-  const blob = new Blob(["﻿"+csv], {type:"text/csv;charset=utf-8;"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-}
 
-document.getElementById("gsUrlInput").value = state.gsUrl;
-updateNote();
-updatePendingBadge();
-if(state.gsUrl) setSyncStatus("loading"); else setSyncStatus(queue.length ? "error" : "local");
-initSelectors();
-populateSelects();
-setPerson("pessoal").then(()=>flushQueue());
+  // Garante que sempre existe pelo menos um dia de treino
+  if(data.dias.length === 0){
+    const id = uid();
+    data.dias.push({ id: id, nome: "Treino A", exercicios: [] });
+    data.diaAtivoId = id;
+  }
+  if(!data.dias.find(function(d){ return d.id === data.diaAtivoId; })){
+    data.diaAtivoId = data.dias[0].id;
+  }
+  save();
 
-window.addEventListener("online", ()=>flushQueue());
-window.addEventListener("offline", ()=>setSyncStatus("error"));
-setInterval(()=>flushQueue(), 30000);
+  function getDiaAtivo(){
+    return data.dias.find(function(d){ return d.id === data.diaAtivoId; });
+  }
+
+  function toast(msg){
+    let t = document.getElementById("toast");
+    if(!t){
+      t = document.createElement("div");
+      t.id = "toast";
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function(){ t.classList.remove("show"); }, 2200);
+  }
+
+  function novoDia(){
+    const sugestao = "Treino " + String.fromCharCode(65 + data.dias.length);
+    const nome = prompt("Nome do novo treino (ex: Treino C, Pernas, Cardio...):", sugestao);
+    if(nome === null) return;
+    const novo = { id: uid(), nome: (nome.trim() || "Novo treino"), exercicios: [] };
+    data.dias.push(novo);
+    data.diaAtivoId = novo.id;
+    save();
+    renderAll();
+  }
+
+  function renderTabs(){
+    const nav = document.getElementById("tabsDias");
+    nav.innerHTML = "";
+    data.dias.forEach(function(dia){
+      const btn = document.createElement("button");
+      btn.className = "tab" + (dia.id === data.diaAtivoId ? " active" : "");
+      btn.textContent = dia.nome || "Treino";
+      btn.addEventListener("click", function(){
+        data.diaAtivoId = dia.id;
+        save();
+        renderAll();
+      });
+      nav.appendChild(btn);
+    });
+    const addBtn = document.createElement("button");
+    addBtn.className = "tab tab-add";
+    addBtn.textContent = "+ dia";
+    addBtn.title = "Novo treino";
+    addBtn.addEventListener("click", novoDia);
+    nav.appendChild(addBtn);
+  }
+
+  function processarImagem(file, ex){
+    if(!file || file.type.indexOf("image/") !== 0){ return; }
+    const leitor = new FileReader();
+    leitor.onload = function(e){
+      const img = new Image();
+      img.onload = function(){
+        const maxLado = 480;
+        let w = img.width, h = img.height;
+        if(w >= h && w > maxLado){ h = Math.round(h * (maxLado / w)); w = maxLado; }
+        else if(h > w && h > maxLado){ w = Math.round(w * (maxLado / h)); h = maxLado; }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        try{
+          ex.imagem = canvas.toDataURL("image/jpeg", 0.75);
+          save();
+          renderConteudoDia();
+        }catch(err){
+          console.error(err);
+          toast("Não consegui processar essa imagem.");
+        }
+      };
+      img.onerror = function(){ toast("Não consegui abrir essa imagem."); };
+      img.src = e.target.result;
+    };
+    leitor.readAsDataURL(file);
+  }
+
+  function addExercicio(){
+    const dia = getDiaAtivo();
+    if(!dia) return;
+    dia.exercicios.push({
+      id: uid(),
+      nome: "Novo exercício",
+      imagem: "",
+      observacoes: "",
+      seriesAtuais: [{peso:"",reps:""},{peso:"",reps:""},{peso:"",reps:""}],
+      ultimoTreino: null
+    });
+    save();
+    renderConteudoDia();
+  }
+
+  function criarCardExercicio(dia, ex){
+    const card = document.createElement("div");
+    card.className = "exercicio-card";
+
+    const ultimoTexto = ex.ultimoTreino
+      ? ex.ultimoTreino.data + ": " + ex.ultimoTreino.series.map(function(s){
+          return (s.peso || "?") + "kg×" + (s.reps || "?");
+        }).join(", ")
+      : "Nenhum registro ainda";
+
+    const seriesRows = ex.seriesAtuais.map(function(s, i){
+      return '<div class="serie-row">'
+        + '<span class="serie-num">' + (i+1) + '</span>'
+        + '<input type="number" inputmode="decimal" step="0.5" min="0" class="serie-peso" placeholder="kg" value="' + escapeHtml(s.peso || "") + '" data-idx="' + i + '">'
+        + '<span class="serie-x">×</span>'
+        + '<input type="number" inputmode="numeric" min="0" class="serie-reps" placeholder="reps" value="' + escapeHtml(s.reps || "") + '" data-idx="' + i + '">'
+        + '</div>';
+    }).join("");
+
+    card.innerHTML =
+      '<div class="exercicio-topo">'
+        + '<div class="imagem-wrap" tabindex="0" title="Toque para enviar, ou cole uma imagem copiada (Ctrl+V)">'
+          + (ex.imagem
+              ? '<img src="' + ex.imagem + '" alt="">'
+              : '<div class="imagem-placeholder">📷<br><span>Colar ou enviar imagem</span></div>')
+          + '<input type="file" accept="image/*" class="file-imagem" hidden>'
+          + (ex.imagem ? '<button class="btn-remover-imagem" title="Remover imagem">✕</button>' : '')
+        + '</div>'
+        + '<div class="exercicio-info">'
+          + '<input type="text" class="exercicio-nome" value="' + escapeHtml(ex.nome) + '" placeholder="Nome do exercício">'
+          + '<button class="btn-icon btn-excluir-exercicio" title="Excluir exercício">🗑️</button>'
+        + '</div>'
+      + '</div>'
+      + '<textarea class="exercicio-obs" placeholder="Observações do personal (execução, dicas, etc.)">' + escapeHtml(ex.observacoes || "") + '</textarea>'
+      + '<div class="ultimo-treino">Último treino: <strong>' + escapeHtml(ultimoTexto) + '</strong></div>'
+      + '<div class="hoje-label">Hoje</div>'
+      + '<div class="series-lista">' + seriesRows + '</div>'
+      + '<div class="series-controles">'
+        + '<button class="btn-serie btn-menos-serie"' + (ex.seriesAtuais.length <= 1 ? " disabled" : "") + '>− série</button>'
+        + '<span class="series-count">' + ex.seriesAtuais.length + ' séries</span>'
+        + '<button class="btn-serie btn-mais-serie">+ série</button>'
+      + '</div>';
+
+    // imagem: enviar arquivo
+    const imgWrap = card.querySelector(".imagem-wrap");
+    const fileInput = card.querySelector(".file-imagem");
+    imgWrap.addEventListener("click", function(e){
+      if(e.target.classList.contains("btn-remover-imagem")) return;
+      fileInput.click();
+    });
+    fileInput.addEventListener("change", function(){
+      if(fileInput.files[0]) processarImagem(fileInput.files[0], ex);
+    });
+    // imagem: colar (Ctrl+V)
+    imgWrap.addEventListener("paste", function(e){
+      const items = e.clipboardData && e.clipboardData.items;
+      if(!items) return;
+      for(let i=0; i<items.length; i++){
+        const item = items[i];
+        if(item.type.indexOf("image/") === 0){
+          const blob = item.getAsFile();
+          if(blob) processarImagem(blob, ex);
+          e.preventDefault();
+          break;
+        }
+      }
+    });
+    const btnRemoverImg = card.querySelector(".btn-remover-imagem");
+    if(btnRemoverImg){
+      btnRemoverImg.addEventListener("click", function(e){
+        e.stopPropagation();
+        ex.imagem = "";
+        save();
+        renderConteudoDia();
+      });
+    }
+
+    card.querySelector(".exercicio-nome").addEventListener("input", function(e){
+      ex.nome = e.target.value;
+      save();
+    });
+    card.querySelector(".exercicio-obs").addEventListener("input", function(e){
+      ex.observacoes = e.target.value;
+      save();
+    });
+    card.querySelector(".btn-excluir-exercicio").addEventListener("click", function(){
+      if(confirm('Excluir o exercício "' + ex.nome + '"?')){
+        dia.exercicios = dia.exercicios.filter(function(x){ return x.id !== ex.id; });
+        save();
+        renderConteudoDia();
+      }
+    });
+    card.querySelectorAll(".serie-peso").forEach(function(inp){
+      inp.addEventListener("input", function(e){
+        ex.seriesAtuais[+e.target.dataset.idx].peso = e.target.value;
+        save();
+      });
+    });
+    card.querySelectorAll(".serie-reps").forEach(function(inp){
+      inp.addEventListener("input", function(e){
+        ex.seriesAtuais[+e.target.dataset.idx].reps = e.target.value;
+        save();
+      });
+    });
+    card.querySelector(".btn-mais-serie").addEventListener("click", function(){
+      ex.seriesAtuais.push({peso:"",reps:""});
+      save();
+      renderConteudoDia();
+    });
+    card.querySelector(".btn-menos-serie").addEventListener("click", function(){
+      if(ex.seriesAtuais.length > 1){
+        ex.seriesAtuais.pop();
+        save();
+        renderConteudoDia();
+      }
+    });
+
+    return card;
+  }
+
+  function renderConteudoDia(){
+    const dia = getDiaAtivo();
+    const main = document.getElementById("conteudoDia");
+    if(!dia){ main.innerHTML = "<p class=\"vazio\">Nenhum treino ainda.</p>"; return; }
+
+    main.innerHTML =
+      '<div class="dia-header">'
+        + '<input type="text" id="diaNomeInput" class="dia-nome-input" value="' + escapeHtml(dia.nome) + '">'
+        + '<button id="btnExcluirDia" class="btn-icon" title="Excluir este treino">🗑️</button>'
+      + '</div>'
+      + '<div id="listaExercicios"></div>'
+      + '<button id="btnAddExercicio" class="btn-add-exercicio">+ Adicionar exercício</button>';
+
+    document.getElementById("diaNomeInput").addEventListener("input", function(e){
+      dia.nome = e.target.value;
+      save();
+      renderTabs();
+    });
+    document.getElementById("btnExcluirDia").addEventListener("click", function(){
+      if(data.dias.length <= 1){ toast("Mantenha ao menos um treino."); return; }
+      if(confirm('Excluir "' + dia.nome + '" e todos os exercícios dele?')){
+        data.dias = data.dias.filter(function(d){ return d.id !== dia.id; });
+        data.diaAtivoId = data.dias[0].id;
+        save();
+        renderAll();
+      }
+    });
+    document.getElementById("btnAddExercicio").addEventListener("click", addExercicio);
+
+    const lista = document.getElementById("listaExercicios");
+    if(dia.exercicios.length === 0){
+      lista.innerHTML = '<p class="vazio">Nenhum exercício ainda.<br>Toque em "+ Adicionar exercício".</p>';
+    } else {
+      dia.exercicios.forEach(function(ex){
+        lista.appendChild(criarCardExercicio(dia, ex));
+      });
+    }
+  }
+
+  function renderAll(){
+    renderTabs();
+    renderConteudoDia();
+  }
+
+  function salvarTreinoDoDia(){
+    const dia = getDiaAtivo();
+    if(!dia) return;
+    const hoje = new Date().toLocaleDateString("pt-BR");
+    let algumaCoisaPreenchida = false;
+    dia.exercicios.forEach(function(ex){
+      const preenchidas = ex.seriesAtuais.filter(function(s){ return s.peso || s.reps; });
+      if(preenchidas.length > 0){
+        algumaCoisaPreenchida = true;
+        ex.ultimoTreino = {
+          data: hoje,
+          series: ex.seriesAtuais.map(function(s){ return { peso: s.peso, reps: s.reps }; })
+        };
+        ex.seriesAtuais = ex.seriesAtuais.map(function(){ return { peso: "", reps: "" }; });
+      }
+    });
+    save();
+    renderConteudoDia();
+    toast(algumaCoisaPreenchida ? "Treino salvo! ✅" : "Preencha ao menos uma série antes de salvar.");
+  }
+
+  function exportarBackup(){
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "meus-treinos-backup-" + new Date().toISOString().slice(0,10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast("Backup baixado!");
+  }
+
+  function importarBackup(file){
+    const leitor = new FileReader();
+    leitor.onload = function(e){
+      try{
+        const novo = JSON.parse(e.target.result);
+        if(novo && Array.isArray(novo.dias) && novo.dias.length > 0){
+          if(confirm("Isso vai substituir todos os treinos atuais pelos do backup. Continuar?")){
+            data = novo;
+            if(!data.dias.find(function(d){ return d.id === data.diaAtivoId; })){
+              data.diaAtivoId = data.dias[0].id;
+            }
+            save();
+            renderAll();
+            toast("Backup importado!");
+          }
+        } else {
+          alert("Arquivo de backup inválido.");
+        }
+      }catch(err){
+        alert("Não consegui ler esse arquivo.");
+      }
+    };
+    leitor.readAsText(file);
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    renderAll();
+    document.getElementById("btnSalvarTreino").addEventListener("click", salvarTreinoDoDia);
+    document.getElementById("btnExport").addEventListener("click", exportarBackup);
+    document.getElementById("btnImport").addEventListener("click", function(){
+      document.getElementById("importFile").click();
+    });
+    document.getElementById("importFile").addEventListener("change", function(e){
+      if(e.target.files[0]) importarBackup(e.target.files[0]);
+      e.target.value = "";
+    });
+  });
+})();
 </script>
 </body>
 </html>
